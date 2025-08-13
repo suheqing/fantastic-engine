@@ -119,10 +119,22 @@
             cursor: pointer;
             font-size: 14px;
             transition: background-color 0.3s;
+            margin: 5px;
         }
 
         .retry-btn:hover {
             background-color: #0da392;
+        }
+
+        /* 备用链接样式 */
+        .alternative-links {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .alternative-links p {
+            margin-bottom: 10px;
         }
 
         /* 动画定义 */
@@ -196,6 +208,11 @@
         <h3>加载失败</h3>
         <p id="errorDetails">无法加载指定的内容，请重试</p>
         <button class="retry-btn" onclick="retryLoad()">重试</button>
+        <div class="alternative-links">
+            <p>或尝试备用链接：</p>
+            <button class="retry-btn" onclick="loadAlternativeUrl()">备用地址1</button>
+            <!-- 可以根据需要添加更多备用地址 -->
+        </div>
     </div>
 
     <script>
@@ -203,6 +220,12 @@
         let iframe = null;
         const MAX_LOAD_TIME = 15000; // 最大加载时间15秒
         let loadTimeout = null;
+        // 备用链接 - 请替换为你的实际备用地址
+        const ALTERNATIVE_URLS = [
+            "https://你的gitee页面地址",
+            "https://你的腾讯云托管地址"
+        ];
+        let currentAltUrlIndex = 0;
 
         // 初始化函数
         function init() {
@@ -286,11 +309,31 @@
                 if (!loadCompleted) {
                     loadCompleted = true;
                     console.error('加载超时:', url);
-                    showError('加载超时，请稍后重试');
+                    showError('加载超时，请稍后重试或使用备用地址');
                 }
             }, MAX_LOAD_TIME);
             
             document.body.appendChild(iframe);
+        }
+
+        // 加载备用链接
+        function loadAlternativeUrl() {
+            if (currentAltUrlIndex >= ALTERNATIVE_URLS.length) {
+                currentAltUrlIndex = 0;
+            }
+            
+            const altUrl = ALTERNATIVE_URLS[currentAltUrlIndex];
+            currentAltUrlIndex++;
+            
+            // 隐藏错误信息
+            document.getElementById('errorMessage').style.display = 'none';
+            
+            // 显示加载器
+            const loader = document.querySelector('.loader-container');
+            loader.classList.remove('loader-hidden');
+            
+            // 加载备用URL
+            loadIframe(altUrl);
         }
 
         // 隐藏加载动画
@@ -306,6 +349,22 @@
             const detailsElement = document.getElementById('errorDetails');
             detailsElement.textContent = message;
             errorElement.style.display = 'block';
+            
+            // 如果是微信环境，显示额外提示
+            if (isWechatBrowser()) {
+                const wechatNote = document.createElement('p');
+                wechatNote.style.fontSize = '12px';
+                wechatNote.style.color = '#999';
+                wechatNote.style.marginTop = '10px';
+                wechatNote.textContent = '提示：微信可能限制部分链接，建议使用备用地址或在浏览器中打开';
+                detailsElement.parentNode.insertBefore(wechatNote, detailsElement.nextSibling);
+            }
+        }
+
+        // 检测是否是微信浏览器
+        function isWechatBrowser() {
+            const userAgent = navigator.userAgent.toLowerCase();
+            return userAgent.indexOf('micromessenger') !== -1;
         }
 
         // 重试加载
